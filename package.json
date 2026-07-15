@@ -24,6 +24,9 @@
     "pi"
   ],
   "license": "MIT",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
   "devDependencies": {
     "@types/node": "^26.0.0",
     "esbuild": "^0.24.0",
