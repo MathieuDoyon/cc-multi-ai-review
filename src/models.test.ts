@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseModelID, parsePiModels, familyKey, groupModelFamilies, thinkingSupportMap } from "./models.js";
-import type { PiModel } from "./models.js";
+import { parseModelID, parsePiModels, familyKey, groupModelFamilies, thinkingSupportMap, orderFamilies } from "./models.js";
+import type { PiModel, ModelFamily } from "./models.js";
 
 const SAMPLE = `provider      model                context  max-out  thinking  images
 openai-codex  gpt-5.4              272K     128K     yes       yes
@@ -100,5 +100,41 @@ describe("groupModelFamilies", () => {
 describe("thinkingSupportMap", () => {
   it("maps each model id to its thinking support", () => {
     expect(thinkingSupportMap([pm("a/b", true), pm("c/d", false)])).toEqual({ "a/b": true, "c/d": false });
+  });
+});
+
+function fam(family: string, flagship: string, variants = [flagship]): ModelFamily {
+  return { family, flagship, variants, thinking: true };
+}
+
+describe("orderFamilies", () => {
+  const families = [
+    fam("openai-codex/gpt-5.4", "openai-codex/gpt-5.4"),
+    fam("openai-codex/gpt-5.5", "openai-codex/gpt-5.5"),
+    fam("openai-codex/gpt-5.6", "openai-codex/gpt-5.6-terra"),
+    fam("opencode-go/minimax", "opencode-go/minimax-m3"),
+    fam("opencode-go/kimi", "opencode-go/kimi-k2.7-code"),
+    fam("opencode-go/qwen", "opencode-go/qwen3.7-plus"),
+  ];
+
+  it("orders the default trio (newest gpt, minimax, kimi) first when nothing is remembered", () => {
+    expect(orderFamilies(families, []).map((f) => f.family)).toEqual([
+      "openai-codex/gpt-5.6",
+      "opencode-go/minimax",
+      "opencode-go/kimi",
+      "openai-codex/gpt-5.4",
+      "openai-codex/gpt-5.5",
+      "opencode-go/qwen",
+    ]);
+  });
+
+  it("puts last-used families first, in remembered order", () => {
+    const ordered = orderFamilies(families, ["opencode-go/qwen3.7-plus"]).map((f) => f.family);
+    expect(ordered[0]).toBe("opencode-go/qwen");
+    expect(ordered.slice(1, 4)).toEqual([
+      "openai-codex/gpt-5.6",
+      "opencode-go/minimax",
+      "opencode-go/kimi",
+    ]);
   });
 });

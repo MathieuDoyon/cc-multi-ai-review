@@ -91,3 +91,42 @@ export function thinkingSupportMap(models: PiModel[]): Record<string, boolean> {
   for (const m of models) map[m.id] = m.thinking;
   return map;
 }
+
+const DEFAULT_TRIO = ["gpt", "minimax", "kimi"];
+
+export function orderFamilies(families: ModelFamily[], lastModels: string[]): ModelFamily[] {
+  const remaining = [...families];
+  const ordered: ModelFamily[] = [];
+
+  for (const id of lastModels) {
+    const idx = remaining.findIndex((f) => f.variants.includes(id));
+    if (idx !== -1) ordered.push(...remaining.splice(idx, 1));
+  }
+
+  for (const name of DEFAULT_TRIO) {
+    const idx = name === "gpt" ? newestGptIndex(remaining) : remaining.findIndex((f) => familyModel(f) === name);
+    if (idx !== -1) ordered.push(...remaining.splice(idx, 1));
+  }
+
+  ordered.push(...remaining);
+  return ordered;
+}
+
+function familyModel(family: ModelFamily): string {
+  return family.family.split("/")[1] ?? "";
+}
+
+function newestGptIndex(families: ModelFamily[]): number {
+  let best = -1;
+  for (let i = 0; i < families.length; i++) {
+    if (!familyModel(families[i] as ModelFamily).startsWith("gpt")) continue;
+    if (best === -1) {
+      best = i;
+      continue;
+    }
+    const a = familyModel(families[i] as ModelFamily);
+    const b = familyModel(families[best] as ModelFamily);
+    if (a.localeCompare(b, undefined, { numeric: true }) > 0) best = i;
+  }
+  return best;
+}
