@@ -4,39 +4,34 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createReviewStateStore } from "./state.js";
 
-async function tempRepo(): Promise<string> {
-  return mkdtemp(join(tmpdir(), "multi-ai-review-"));
+async function tempBase(): Promise<string> {
+  return mkdtemp(join(tmpdir(), "cc-multi-ai-review-"));
 }
 
 describe("createReviewStateStore", () => {
   it("returns an empty list when state is missing", async () => {
-    const store = createReviewStateStore(await tempRepo());
-
+    const store = createReviewStateStore(await tempBase());
     await expect(store.readLastModels()).resolves.toEqual([]);
   });
 
-  it("writes and reads last models", async () => {
-    const directory = await tempRepo();
-    const store = createReviewStateStore(directory);
+  it("writes and reads last models under multi-ai-review/state.json", async () => {
+    const base = await tempBase();
+    const store = createReviewStateStore(base);
 
-    await store.writeLastModels(["openai/gpt-5.5", "opencode-go/qwen3.7-plus"]);
+    await store.writeLastModels(["openai-codex/gpt-5.6-sol", "opencode-go/minimax-m3"]);
 
     await expect(store.readLastModels()).resolves.toEqual([
-      "openai/gpt-5.5",
-      "opencode-go/qwen3.7-plus",
+      "openai-codex/gpt-5.6-sol",
+      "opencode-go/minimax-m3",
     ]);
-    await expect(readFile(join(directory, ".opencode/multi-ai-review/state.json"), "utf8"))
-      .resolves.toContain("lastModels");
-    await expect(readFile(join(directory, ".opencode/multi-ai-review/.gitignore"), "utf8"))
-      .resolves.toBe("*\n!.gitignore\n");
+    await expect(readFile(join(base, "multi-ai-review/state.json"), "utf8")).resolves.toContain("lastModels");
   });
 
   it("ignores invalid state", async () => {
-    const directory = await tempRepo();
-    await mkdir(join(directory, ".opencode/multi-ai-review"), { recursive: true });
-    await writeFile(join(directory, ".opencode/multi-ai-review/state.json"), "not json");
-    const store = createReviewStateStore(directory);
-
+    const base = await tempBase();
+    await mkdir(join(base, "multi-ai-review"), { recursive: true });
+    await writeFile(join(base, "multi-ai-review/state.json"), "not json");
+    const store = createReviewStateStore(base);
     await expect(store.readLastModels()).resolves.toEqual([]);
   });
 });
