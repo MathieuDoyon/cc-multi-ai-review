@@ -30,7 +30,7 @@ pnpm sync           # copy dist/cli.mjs -> ~/.claude/skills/multi-ai-review/scri
 node dist/cli.mjs prep [baseRef]
 # -> JSON: { baseRef, diffStat, families[], lastModels[] }
 
-node dist/cli.mjs run --models a/b,c/d --thinking medium [--base origin/main] [--focus "auth, data loss"]
+node dist/cli.mjs run --models a/b,c/d --thinking medium [--base origin/main] [--focus "auth, data loss"] [--timeout 480]
 # -> Markdown report; records the lineup at ~/.claude/multi-ai-review/state.json
 ```
 

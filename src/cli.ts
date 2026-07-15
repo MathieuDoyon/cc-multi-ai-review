@@ -1,4 +1,7 @@
 import { exec } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 import { resolveBaseRef } from "./git.js";
 import { groupModelFamilies, orderFamilies, parsePiModels, thinkingSupportMap } from "./models.js";
@@ -15,6 +18,7 @@ export type RunArgs = {
   thinking: ThinkingLevel;
   baseRef?: string;
   focus?: string;
+  timeoutSeconds?: number;
 };
 
 export type CliDeps = {
@@ -22,6 +26,7 @@ export type CliDeps = {
   runPi: PiRunner;
   state: ReviewStateStore;
   limits: DiffLimits;
+  saveRawOutput?: (model: string, text: string) => Promise<string | undefined>;
 };
 
 export function parseRunArgs(argv: string[]): RunArgs {
@@ -29,6 +34,7 @@ export function parseRunArgs(argv: string[]): RunArgs {
   let thinking: ThinkingLevel = "medium";
   let baseRef: string | undefined;
   let focus: string | undefined;
+  let timeoutSeconds: number | undefined;
 
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -46,16 +52,31 @@ export function parseRunArgs(argv: string[]): RunArgs {
     } else if (flag === "--focus" && value !== undefined) {
       focus = value;
       i++;
+    } else if (flag === "--timeout" && value !== undefined) {
+      timeoutSeconds = asTimeoutSeconds(value);
+      i++;
     }
   }
 
   if (models.length === 0) throw new Error("Missing required --models a/b,c/d");
-  return { models, thinking, ...(baseRef ? { baseRef } : {}), ...(focus ? { focus } : {}) };
+  return {
+    models,
+    thinking,
+    ...(baseRef ? { baseRef } : {}),
+    ...(focus ? { focus } : {}),
+    ...(timeoutSeconds !== undefined ? { timeoutSeconds } : {}),
+  };
 }
 
 function asThinking(value: string): ThinkingLevel {
   if (value === "low" || value === "medium" || value === "high") return value;
   throw new Error(`Invalid --thinking value: ${value} (use low|medium|high)`);
+}
+
+function asTimeoutSeconds(value: string): number {
+  const n = Number(value);
+  if (Number.isInteger(n) && n > 0) return n;
+  throw new Error(`Invalid --timeout value: ${value} (use a positive integer of seconds)`);
 }
 
 export function parsePrepArgs(argv: string[]): { baseRef?: string } {
@@ -93,6 +114,7 @@ export async function runReviewCommand(deps: CliDeps, args: RunArgs): Promise<st
     limits: deps.limits,
     ...(args.baseRef ? { baseRef: args.baseRef } : {}),
     ...(args.focus ? { instructions: args.focus } : {}),
+    ...(deps.saveRawOutput ? { saveRawOutput: deps.saveRawOutput } : {}),
   });
 
   try {
@@ -103,20 +125,34 @@ export async function runReviewCommand(deps: CliDeps, args: RunArgs): Promise<st
   return report;
 }
 
+async function saveRawReviewerOutput(model: string, text: string): Promise<string | undefined> {
+  const dir = join(tmpdir(), "multi-ai-review");
+  await mkdir(dir, { recursive: true });
+  const file = join(dir, `${Date.now()}-${model.replaceAll("/", "-")}.txt`);
+  await writeFile(file, text, "utf8");
+  return file;
+}
+
 export async function main(argv: string[]): Promise<void> {
   const [command, ...rest] = argv;
   const shell: ShellRunner = async (cmd) => (await execAsync(cmd, { maxBuffer: 64 * 1024 * 1024 })).stdout;
-  const deps: CliDeps = {
+  const baseDeps = {
     shell,
-    runPi: createPiRunner(),
     state: createReviewStateStore(),
     limits: DEFAULT_LIMITS,
   };
 
   if (command === "prep") {
+    const deps: CliDeps = { ...baseDeps, runPi: createPiRunner() };
     process.stdout.write(await runPrepCommand(deps, parsePrepArgs(rest)));
   } else if (command === "run") {
-    process.stdout.write(await runReviewCommand(deps, parseRunArgs(rest)));
+    const args = parseRunArgs(rest);
+    const deps: CliDeps = {
+      ...baseDeps,
+      runPi: createPiRunner(args.timeoutSeconds ? { timeoutMs: args.timeoutSeconds * 1000 } : {}),
+      saveRawOutput: saveRawReviewerOutput,
+    };
+    process.stdout.write(await runReviewCommand(deps, args));
   } else {
     process.stderr.write(`Unknown command: ${command ?? "(none)"}. Use "prep" or "run".\n`);
     process.exitCode = 1;

@@ -75,13 +75,15 @@ node "$DIR/scripts/cli.mjs" run \
   --models <csv-of-ids> \
   --thinking <low|medium|high> \
   [--base <ref>] \
-  [--focus "<focus text>"]
+  [--focus "<focus text>"] \
+  [--timeout <seconds>]
 ```
 This prints the deterministic report (findings table with severity, confidence,
 consensus models, location, recommendation, action; a "Do Not Address Yet"
 section; and any reviewer failures) and records the lineup globally for next
 time. Run it with `run_in_background: true` if you want to keep working; it
-typically takes 1–3 minutes for three models.
+typically takes 1–3 minutes for three models. Large diffs may need a higher
+timeout (default 240s), e.g. `--timeout 480`.
 
 ### 6. Ground-truth, then present
 

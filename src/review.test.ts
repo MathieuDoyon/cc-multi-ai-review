@@ -116,6 +116,42 @@ describe("runMultiAiReview", () => {
     expect(report).toContain("Could not parse reviewer JSON output");
   });
 
+  it("persists raw reviewer output on parse failure and includes the path in the reason", async () => {
+    const runPi = vi.fn<PiRunner>(async ({ model }) => ({ model, ok: true, stdout: "not json" }));
+    const saveRawOutput = vi.fn(async () => "/tmp/fake/raw.txt");
+
+    const report = await runMultiAiReview({
+      runPi,
+      shell: shellWithGitContext(),
+      models: ["openai-codex/gpt-5.6-sol"],
+      limits: { maxDiffBytes: 1000, maxDiffLines: 100, maxFiles: 10 },
+      saveRawOutput,
+    });
+
+    expect(report).toContain(
+      "Could not parse reviewer JSON output (raw output: /tmp/fake/raw.txt)",
+    );
+    expect(saveRawOutput).toHaveBeenCalledWith("openai-codex/gpt-5.6-sol", "not json");
+  });
+
+  it("falls back to the plain parse-failure reason when saveRawOutput rejects", async () => {
+    const runPi = vi.fn<PiRunner>(async ({ model }) => ({ model, ok: true, stdout: "not json" }));
+    const saveRawOutput = vi.fn(async () => {
+      throw new Error("disk full");
+    });
+
+    const report = await runMultiAiReview({
+      runPi,
+      shell: shellWithGitContext(),
+      models: ["openai-codex/gpt-5.6-sol"],
+      limits: { maxDiffBytes: 1000, maxDiffLines: 100, maxFiles: 10 },
+      saveRawOutput,
+    });
+
+    expect(report).toContain("Could not parse reviewer JSON output");
+    expect(report).not.toContain("raw output:");
+  });
+
   it("isolates a rejecting runPi to a reviewer failure for that model", async () => {
     const runPi = vi.fn<PiRunner>(async ({ model }) => {
       if (model === "bad/model") throw new Error("spawn exploded");

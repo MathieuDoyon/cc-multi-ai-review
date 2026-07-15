@@ -61,6 +61,21 @@ async function reviewWithModel(
   if (!result.ok) return { model, reason: result.reason };
 
   const output = extractReviewerOutput(result.stdout);
-  if (!output) return { model, reason: "Could not parse reviewer JSON output" };
+  if (!output) {
+    let saved: string | undefined;
+    if (input.saveRawOutput) {
+      try {
+        saved = await input.saveRawOutput(model, result.stdout);
+      } catch {
+        saved = undefined;
+      }
+    }
+    return {
+      model,
+      reason: saved
+        ? `Could not parse reviewer JSON output (raw output: ${saved})`
+        : "Could not parse reviewer JSON output",
+    };
+  }
   return { model, output };
 }

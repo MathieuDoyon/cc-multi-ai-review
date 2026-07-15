@@ -95,6 +95,7 @@ export type RunReviewInput = {
   baseRef?: string;
   instructions?: string;
   limits: DiffLimits;
+  saveRawOutput?: (model: string, text: string) => Promise<string | undefined>;
 };
 
 export type ReviewStateStore = {

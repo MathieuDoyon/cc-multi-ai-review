@@ -2,6 +2,9 @@
 
 // src/cli.ts
 import { exec } from "node:child_process";
+import { mkdir as mkdir2, writeFile as writeFile2 } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join as join2 } from "node:path";
 import { promisify } from "node:util";
 
 // src/git.ts
@@ -460,7 +463,20 @@ async function reviewWithModel(input, model, prompt) {
   });
   if (!result.ok) return { model, reason: result.reason };
   const output = extractReviewerOutput(result.stdout);
-  if (!output) return { model, reason: "Could not parse reviewer JSON output" };
+  if (!output) {
+    let saved;
+    if (input.saveRawOutput) {
+      try {
+        saved = await input.saveRawOutput(model, result.stdout);
+      } catch {
+        saved = void 0;
+      }
+    }
+    return {
+      model,
+      reason: saved ? `Could not parse reviewer JSON output (raw output: ${saved})` : "Could not parse reviewer JSON output"
+    };
+  }
   return { model, output };
 }
 
@@ -497,6 +513,7 @@ function parseRunArgs(argv) {
   let thinking = "medium";
   let baseRef;
   let focus;
+  let timeoutSeconds;
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const next = argv[i + 1];
@@ -513,14 +530,28 @@ function parseRunArgs(argv) {
     } else if (flag === "--focus" && value !== void 0) {
       focus = value;
       i++;
+    } else if (flag === "--timeout" && value !== void 0) {
+      timeoutSeconds = asTimeoutSeconds(value);
+      i++;
     }
   }
   if (models.length === 0) throw new Error("Missing required --models a/b,c/d");
-  return { models, thinking, ...baseRef ? { baseRef } : {}, ...focus ? { focus } : {} };
+  return {
+    models,
+    thinking,
+    ...baseRef ? { baseRef } : {},
+    ...focus ? { focus } : {},
+    ...timeoutSeconds !== void 0 ? { timeoutSeconds } : {}
+  };
 }
 function asThinking(value) {
   if (value === "low" || value === "medium" || value === "high") return value;
   throw new Error(`Invalid --thinking value: ${value} (use low|medium|high)`);
+}
+function asTimeoutSeconds(value) {
+  const n = Number(value);
+  if (Number.isInteger(n) && n > 0) return n;
+  throw new Error(`Invalid --timeout value: ${value} (use a positive integer of seconds)`);
 }
 function parsePrepArgs(argv) {
   const baseRef = argv.find((arg) => !arg.startsWith("--"));
@@ -551,7 +582,8 @@ async function runReviewCommand(deps, args) {
     thinkingSupport: support,
     limits: deps.limits,
     ...args.baseRef ? { baseRef: args.baseRef } : {},
-    ...args.focus ? { instructions: args.focus } : {}
+    ...args.focus ? { instructions: args.focus } : {},
+    ...deps.saveRawOutput ? { saveRawOutput: deps.saveRawOutput } : {}
   });
   try {
     await deps.state.writeLastModels(args.models);
@@ -559,19 +591,32 @@ async function runReviewCommand(deps, args) {
   }
   return report;
 }
+async function saveRawReviewerOutput(model, text) {
+  const dir = join2(tmpdir(), "multi-ai-review");
+  await mkdir2(dir, { recursive: true });
+  const file = join2(dir, `${Date.now()}-${model.replaceAll("/", "-")}.txt`);
+  await writeFile2(file, text, "utf8");
+  return file;
+}
 async function main(argv) {
   const [command, ...rest] = argv;
   const shell = async (cmd) => (await execAsync(cmd, { maxBuffer: 64 * 1024 * 1024 })).stdout;
-  const deps = {
+  const baseDeps = {
     shell,
-    runPi: createPiRunner(),
     state: createReviewStateStore(),
     limits: DEFAULT_LIMITS
   };
   if (command === "prep") {
+    const deps = { ...baseDeps, runPi: createPiRunner() };
     process.stdout.write(await runPrepCommand(deps, parsePrepArgs(rest)));
   } else if (command === "run") {
-    process.stdout.write(await runReviewCommand(deps, parseRunArgs(rest)));
+    const args = parseRunArgs(rest);
+    const deps = {
+      ...baseDeps,
+      runPi: createPiRunner(args.timeoutSeconds ? { timeoutMs: args.timeoutSeconds * 1e3 } : {}),
+      saveRawOutput: saveRawReviewerOutput
+    };
+    process.stdout.write(await runReviewCommand(deps, args));
   } else {
     process.stderr.write(`Unknown command: ${command ?? "(none)"}. Use "prep" or "run".
 `);

@@ -68,6 +68,22 @@ describe("parseRunArgs", () => {
   it("does not consume a following flag as a value", () => {
     expect(() => parseRunArgs(["--models", "--thinking", "high"])).toThrow(/--models/);
   });
+
+  it("parses a --timeout value in seconds", () => {
+    expect(parseRunArgs(["--models", "a/b", "--timeout", "480"])).toEqual({
+      models: ["a/b"],
+      thinking: "medium",
+      timeoutSeconds: 480,
+    });
+  });
+
+  it("throws on a non-numeric --timeout value", () => {
+    expect(() => parseRunArgs(["--models", "a/b", "--timeout", "abc"])).toThrow(/timeout/);
+  });
+
+  it("throws on a non-positive --timeout value", () => {
+    expect(() => parseRunArgs(["--models", "a/b", "--timeout", "0"])).toThrow(/timeout/);
+  });
 });
 
 describe("parsePrepArgs", () => {
