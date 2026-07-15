@@ -115,4 +115,23 @@ describe("runMultiAiReview", () => {
 
     expect(report).toContain("Could not parse reviewer JSON output");
   });
+
+  it("isolates a rejecting runPi to a reviewer failure for that model", async () => {
+    const runPi = vi.fn<PiRunner>(async ({ model }) => {
+      if (model === "bad/model") throw new Error("spawn exploded");
+      return { model, ok: true, stdout: FINDING_JSON };
+    });
+
+    const report = await runMultiAiReview({
+      runPi,
+      shell: shellWithGitContext(),
+      models: ["bad/model", "openai-codex/gpt-5.6-sol"],
+      limits: { maxDiffBytes: 1000, maxDiffLines: 100, maxFiles: 10 },
+    });
+
+    expect(report).toContain("Missing null guard");
+    expect(report).toContain("## Reviewer Failures");
+    expect(report).toContain("bad/model");
+    expect(report).toContain("spawn exploded");
+  });
 });

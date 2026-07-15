@@ -19,15 +19,23 @@ export async function runMultiAiReview(input: RunReviewInput): Promise<string> {
     ...(input.instructions ? { instructions: input.instructions } : {}),
   });
 
-  const outcomes = await Promise.all(
+  const settled = await Promise.allSettled(
     input.models.map((model) => reviewWithModel(input, model, prompt)),
   );
 
   const results: ReviewerResult[] = [];
   const failures: ReviewerFailure[] = [];
-  for (const outcome of outcomes) {
-    if ("output" in outcome) results.push(outcome);
-    else failures.push(outcome);
+  for (const [index, item] of settled.entries()) {
+    if (item.status === "fulfilled") {
+      if ("output" in item.value) results.push(item.value);
+      else failures.push(item.value);
+      continue;
+    }
+
+    failures.push({
+      model: input.models[index] ?? "unknown",
+      reason: item.reason instanceof Error ? item.reason.message : String(item.reason),
+    });
   }
 
   return renderReport({
