@@ -115,3 +115,17 @@ export type ReviewStateStore = {
   readLastModels(): Promise<string[]>;
   writeLastModels(models: string[]): Promise<void>;
 };
+
+export type ThinkingLevel = "low" | "medium" | "high";
+
+export type PiInvocation = {
+  model: string;
+  prompt: string;
+  thinking?: ThinkingLevel;
+};
+
+export type PiResult =
+  | { model: string; ok: true; stdout: string }
+  | { model: string; ok: false; reason: string };
+
+export type PiRunner = (invocation: PiInvocation) => Promise<PiResult>;
