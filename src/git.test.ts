@@ -58,7 +58,7 @@ describe("resolveBaseRef", () => {
 
     await expect(resolveBaseRef(shell)).resolves.toEqual({
       ok: false,
-      message: "Could not resolve a base ref. Try /multi-review --base origin/main.",
+      message: "Could not resolve a base ref. Try /multi-ai-review origin/main.",
     });
   });
 });
