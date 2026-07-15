@@ -32,7 +32,8 @@ export function parseRunArgs(argv: string[]): RunArgs {
 
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
-    const value = argv[i + 1];
+    const next = argv[i + 1];
+    const value = next !== undefined && !next.startsWith("--") ? next : undefined;
     if (flag === "--models" && value !== undefined) {
       models = value.split(",").map((m) => m.trim()).filter(Boolean);
       i++;

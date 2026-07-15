@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parsePrepArgs, parseRunArgs, runPrepCommand, runReviewCommand } from "./cli.js";
 import type { CliDeps } from "./cli.js";
 import type { PiRunner, ReviewStateStore, ShellRunner } from "./types.js";
@@ -63,6 +63,10 @@ describe("parseRunArgs", () => {
 
   it("throws on an invalid thinking level", () => {
     expect(() => parseRunArgs(["--models", "a/b", "--thinking", "deep"])).toThrow(/thinking/);
+  });
+
+  it("does not consume a following flag as a value", () => {
+    expect(() => parseRunArgs(["--models", "--thinking", "high"])).toThrow(/--models/);
   });
 });
 
