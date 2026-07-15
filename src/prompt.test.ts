@@ -74,3 +74,19 @@ describe("extractReviewerOutput", () => {
     expect(extractReviewerOutput("```json\n{}\n```")).toBeUndefined();
   });
 });
+
+describe("extractReviewerOutput fallback", () => {
+  it("parses a bare JSON object when no code fence is present", () => {
+    const text = 'Here is my review: {"summary":"ok","findings":[]} — done.';
+    expect(extractReviewerOutput(text)).toEqual({ summary: "ok", findings: [] });
+  });
+
+  it("returns undefined when there is no JSON at all", () => {
+    expect(extractReviewerOutput("no json here")).toBeUndefined();
+  });
+
+  it("does not double-dip into a later bare object when the fenced block is invalid", () => {
+    const text = '```json\n{bad}\n``` and later {"summary":"ok","findings":[]}';
+    expect(extractReviewerOutput(text)).toBeUndefined();
+  });
+});

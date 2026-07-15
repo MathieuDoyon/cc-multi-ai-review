@@ -50,14 +50,14 @@ export function renderReport(input: ReportInput): string {
     lines.push("", "## Do Not Address Yet", "");
     for (const group of likelyFalsePositives) {
       lines.push(
-        `- **${group.title}** (${locationFor(group)}): ${group.findings[0]?.falsePositiveRisk ?? "Evidence is weak."}`,
+        `- **${escapeCell(group.title)}** (${locationFor(group)}): ${escapeCell(group.findings[0]?.falsePositiveRisk ?? "Evidence is weak.")}`,
       );
     }
   }
 
   if (input.failures.length > 0) {
     lines.push("", "## Reviewer Failures", "");
-    for (const failure of input.failures) lines.push(`- \`${failure.model}\`: ${failure.reason}`);
+    for (const failure of input.failures) lines.push(`- \`${failure.model}\`: ${escapeCell(failure.reason)}`);
   }
 
   return lines.join("\n");

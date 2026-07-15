@@ -86,32 +86,33 @@ export type ReportInput = {
   truncationReason?: string;
 };
 
-export type ReviewClient = {
-  session: {
-    create(input: { body: { parentID: string; title: string } }): Promise<{ id: string }>;
-    prompt(input: {
-      path: { id: string };
-      body: {
-        model: { providerID: string; modelID: string };
-        system: string;
-        tools: Record<string, boolean>;
-        parts: Array<{ type: "text"; text: string }>;
-      };
-    }): Promise<{ parts: Array<{ type: string; text?: string }> }>;
-  };
-};
-
 export type RunReviewInput = {
-  client: ReviewClient;
+  runPi: PiRunner;
   shell: ShellRunner;
-  sessionID: string;
   models: string[];
+  thinking?: ThinkingLevel;
+  thinkingSupport?: Record<string, boolean>;
   baseRef?: string;
   instructions?: string;
   limits: DiffLimits;
+  saveRawOutput?: (model: string, text: string) => Promise<string | undefined>;
 };
 
 export type ReviewStateStore = {
   readLastModels(): Promise<string[]>;
   writeLastModels(models: string[]): Promise<void>;
 };
+
+export type ThinkingLevel = "low" | "medium" | "high";
+
+export type PiInvocation = {
+  model: string;
+  prompt: string;
+  thinking?: ThinkingLevel;
+};
+
+export type PiResult =
+  | { model: string; ok: true; stdout: string }
+  | { model: string; ok: false; reason: string };
+
+export type PiRunner = (invocation: PiInvocation) => Promise<PiResult>;

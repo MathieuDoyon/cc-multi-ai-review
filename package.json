@@ -1,51 +1,35 @@
 {
-  "name": "opencode-multi-ai-review",
-  "version": "0.1.4",
-  "description": "Multi-model code review plugin for opencode.",
+  "name": "cc-multi-ai-review",
+  "version": "0.1.0",
+  "description": "Multi-model AI code review CLI for the Claude Code /multi-ai-review skill.",
   "type": "module",
-  "packageManager": "pnpm@11.7.0",
   "private": false,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./command": "./commands/multi-review.md"
+  "bin": {
+    "cc-multi-ai-review": "./dist/cli.mjs"
   },
   "files": [
-    "dist",
-    "commands",
-    "README.md"
+    "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "prepack": "pnpm build",
+    "build": "esbuild src/cli.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/cli.mjs --banner:js='#!/usr/bin/env node'",
+    "sync": "mkdir -p \"$HOME/.claude/skills/multi-ai-review/scripts\" && cp dist/cli.mjs \"$HOME/.claude/skills/multi-ai-review/scripts/cli.mjs\" && cp skill/SKILL.md \"$HOME/.claude/skills/multi-ai-review/SKILL.md\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"
   },
   "keywords": [
-    "opencode",
-    "plugin",
+    "claude-code",
     "code-review",
-    "multi-agent"
+    "multi-agent",
+    "pi"
   ],
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MathieuDoyon/opencode-multi-ai-review.git"
-  },
-  "homepage": "https://github.com/MathieuDoyon/opencode-multi-ai-review#readme",
-  "bugs": {
-    "url": "https://github.com/MathieuDoyon/opencode-multi-ai-review/issues"
-  },
-  "dependencies": {
-    "@opencode-ai/plugin": "^1.17.8"
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }

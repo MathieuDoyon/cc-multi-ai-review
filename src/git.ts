@@ -21,7 +21,7 @@ export async function resolveBaseRef(
 
   return {
     ok: false,
-    message: "Could not resolve a base ref. Try /multi-review --base origin/main.",
+    message: "Could not resolve a base ref. Try /multi-ai-review origin/main.",
   };
 }
 
@@ -68,7 +68,7 @@ async function resolveCandidate(shell: ShellRunner, ref: string): Promise<BaseRe
 }
 
 function isSafeGitRef(ref: string): boolean {
-  return /^[A-Za-z0-9._/@:+-]+$/.test(ref) && !ref.includes("..");
+  return /^[A-Za-z0-9._/@:+-]+$/.test(ref) && !ref.includes("..") && !ref.startsWith("-");
 }
 
 function truncateLines(text: string, maxLines: number): { text: string; truncated: boolean } {

@@ -1,6 +1,5 @@
-import { groupFindings } from "./findings.js";
 import { collectDiff, resolveBaseRef } from "./git.js";
-import { parseModelID } from "./models.js";
+import { groupFindings } from "./findings.js";
 import { buildReviewerPrompt, extractReviewerOutput } from "./prompt.js";
 import { renderReport } from "./report.js";
 import type { ReviewerFailure, ReviewerResult, RunReviewInput } from "./types.js";
@@ -15,14 +14,18 @@ export async function runMultiAiReview(input: RunReviewInput): Promise<string> {
     limits: input.limits,
   });
 
+  const prompt = buildReviewerPrompt({
+    diffContext,
+    ...(input.instructions ? { instructions: input.instructions } : {}),
+  });
+
   const settled = await Promise.allSettled(
-    input.models.map((model) => reviewWithModel(input, model, diffContext)),
+    input.models.map((model) => reviewWithModel(input, model, prompt)),
   );
 
   const results: ReviewerResult[] = [];
   const failures: ReviewerFailure[] = [];
-
-  for (const item of settled) {
+  for (const [index, item] of settled.entries()) {
     if (item.status === "fulfilled") {
       if ("output" in item.value) results.push(item.value);
       else failures.push(item.value);
@@ -30,7 +33,7 @@ export async function runMultiAiReview(input: RunReviewInput): Promise<string> {
     }
 
     failures.push({
-      model: "unknown",
+      model: input.models[index] ?? "unknown",
       reason: item.reason instanceof Error ? item.reason.message : String(item.reason),
     });
   }
@@ -46,35 +49,33 @@ export async function runMultiAiReview(input: RunReviewInput): Promise<string> {
 async function reviewWithModel(
   input: RunReviewInput,
   model: string,
-  diffContext: Parameters<typeof buildReviewerPrompt>[0]["diffContext"],
+  prompt: string,
 ): Promise<ReviewerResult | ReviewerFailure> {
-  const parsedModel = parseModelID(model);
-  if (!parsedModel) return { model, reason: "Invalid model ID" };
-
-  const child = await input.client.session.create({
-    body: { parentID: input.sessionID, title: `Code review: ${model}` },
-  });
-  const response = await input.client.session.prompt({
-    path: { id: child.id },
-    body: {
-      model: parsedModel,
-      system: "You are a read-only code reviewer. Return only the requested review response.",
-      tools: { write: false, edit: false, apply_patch: false },
-      parts: [
-        {
-          type: "text",
-          text: buildReviewerPrompt({ diffContext, instructions: input.instructions }),
-        },
-      ],
-    },
+  const supportsThinking = input.thinkingSupport?.[model] !== false;
+  const result = await input.runPi({
+    model,
+    prompt,
+    ...(input.thinking && supportsThinking ? { thinking: input.thinking } : {}),
   });
 
-  const text = response.parts
-    .filter((part) => part.type === "text" && typeof part.text === "string")
-    .map((part) => part.text)
-    .join("\n");
-  const output = extractReviewerOutput(text);
+  if (!result.ok) return { model, reason: result.reason };
 
-  if (!output) return { model, reason: "Could not parse reviewer JSON output" };
+  const output = extractReviewerOutput(result.stdout);
+  if (!output) {
+    let saved: string | undefined;
+    if (input.saveRawOutput) {
+      try {
+        saved = await input.saveRawOutput(model, result.stdout);
+      } catch {
+        saved = undefined;
+      }
+    }
+    return {
+      model,
+      reason: saved
+        ? `Could not parse reviewer JSON output (raw output: ${saved})`
+        : "Could not parse reviewer JSON output",
+    };
+  }
   return { model, output };
 }

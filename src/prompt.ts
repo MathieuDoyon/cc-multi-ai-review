@@ -52,15 +52,23 @@ ${input.diffContext.diff}`;
 }
 
 export function extractReviewerOutput(text: string): ReviewerOutput | undefined {
-  const match = text.match(/```json\s*([\s\S]*?)\s*```/i);
-  if (!match?.[1]) return undefined;
+  const fenced = text.match(/```json\s*([\s\S]*?)\s*```/i);
+  const candidate = fenced?.[1] ?? bareObject(text);
+  if (!candidate) return undefined;
 
   try {
-    const parsed = JSON.parse(match[1]) as unknown;
+    const parsed = JSON.parse(candidate) as unknown;
     return isReviewerOutput(parsed) ? parsed : undefined;
   } catch {
     return undefined;
   }
+}
+
+function bareObject(text: string): string | undefined {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end <= start) return undefined;
+  return text.slice(start, end + 1);
 }
 
 function isReviewerOutput(value: unknown): value is ReviewerOutput {
