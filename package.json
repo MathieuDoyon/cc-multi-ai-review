@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/cli.mjs --banner:js='#!/usr/bin/env node'",
-    "sync": "mkdir -p \"$HOME/.claude/skills/multi-ai-review/scripts\" && cp dist/cli.mjs \"$HOME/.claude/skills/multi-ai-review/scripts/cli.mjs\"",
+    "sync": "mkdir -p \"$HOME/.claude/skills/multi-ai-review/scripts\" && cp dist/cli.mjs \"$HOME/.claude/skills/multi-ai-review/scripts/cli.mjs\" && cp skill/SKILL.md \"$HOME/.claude/skills/multi-ai-review/SKILL.md\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run"

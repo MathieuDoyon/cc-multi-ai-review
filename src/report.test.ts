@@ -99,6 +99,16 @@ describe("renderReport", () => {
     expect(report).toContain("- `bad/model`: timeout");
   });
 
+  it("flattens a multi-line reviewer failure reason onto a single list line", () => {
+    const failures: ReviewerFailure[] = [
+      { model: "bad/model", reason: "timeout\nstack trace line 2\nstack trace line 3" },
+    ];
+    const report = renderReport({ groups: [], failures, partial: false });
+
+    expect(report).not.toContain("timeout\nstack trace line 2");
+    expect(report).toContain("- `bad/model`: timeout stack trace line 2 stack trace line 3");
+  });
+
   it("renders likely false positives separately without numbering them", () => {
     const report = renderReport({
       groups: [findingGroup({ action: "likely false positive", confidence: "low", severity: "low" })],

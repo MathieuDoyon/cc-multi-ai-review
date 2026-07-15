@@ -68,7 +68,7 @@ async function resolveCandidate(shell: ShellRunner, ref: string): Promise<BaseRe
 }
 
 function isSafeGitRef(ref: string): boolean {
-  return /^[A-Za-z0-9._/@:+-]+$/.test(ref) && !ref.includes("..");
+  return /^[A-Za-z0-9._/@:+-]+$/.test(ref) && !ref.includes("..") && !ref.startsWith("-");
 }
 
 function truncateLines(text: string, maxLines: number): { text: string; truncated: boolean } {

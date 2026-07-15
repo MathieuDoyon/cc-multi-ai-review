@@ -106,6 +106,18 @@ describe("runReviewCommand", () => {
     await expect(state.readLastModels()).resolves.toEqual(["openai-codex/gpt-5.6-sol"]);
   });
 
+  it("still resolves the report when persisting the lineup fails", async () => {
+    const state: ReviewStateStore = {
+      readLastModels: async () => [],
+      writeLastModels: async () => {
+        throw new Error("disk full");
+      },
+    };
+    await expect(
+      runReviewCommand(deps({ state }), { models: ["openai-codex/gpt-5.6-sol"], thinking: "medium" }),
+    ).resolves.toContain("# Multi-AI Code Review");
+  });
+
   it("gates thinking on pi's reported support", async () => {
     const seen: Array<{ model: string; thinking?: string }> = [];
     const runPi: PiRunner = async ({ model, thinking }) => {

@@ -4,6 +4,11 @@ A self-contained Node CLI that powers the Claude Code `/multi-ai-review` skill:
 one branch-vs-base code review across several `pi` model families, synthesized
 into one deterministic Markdown report.
 
+Running a review sends the full branch diff (up to the configured limits) to
+third-party model providers via the `pi` CLI — whichever models you select,
+e.g. OpenAI, MiniMax, or Kimi providers. Don't run it on repos whose diffs
+must not leave the machine.
+
 ## Layout
 
 - `src/` — TypeScript engine (models, git, prompt, findings, report, pi runner, cli).
@@ -16,10 +21,8 @@ into one deterministic Markdown report.
 pnpm install
 pnpm build          # esbuild -> dist/cli.mjs
 pnpm sync           # copy dist/cli.mjs -> ~/.claude/skills/multi-ai-review/scripts/cli.mjs
+                    # and skill/SKILL.md -> ~/.claude/skills/multi-ai-review/SKILL.md
 ```
-
-Also copy `skill/SKILL.md` to `~/.claude/skills/multi-ai-review/SKILL.md` the
-first time (or whenever it changes).
 
 ## CLI
 

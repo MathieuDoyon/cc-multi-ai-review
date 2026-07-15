@@ -59,9 +59,9 @@ Make a single `AskUserQuestion` call:
 - **Q2 "Thinking level?" (single-select).** Options: `medium (Recommended)`,
   `high`, `low`.
 - **Q3 "Base ref?"** — include **only if** `prep` returned `baseRef.ok:false`.
-  Options: `origin/main`, `origin/master`, `main`, plus **Other**. If `prep`
-  succeeded, do not ask; instead state the detected ref (`baseRef.ref`) and
-  `diffStat` in your preamble.
+  Options: `origin/main`, `origin/master`, `main`, `master`, plus **Other**.
+  If `prep` succeeded, do not ask; instead state the detected ref
+  (`baseRef.ref`) and `diffStat` in your preamble.
 
 ### 4. Resolve selections to model IDs
 
@@ -102,3 +102,7 @@ the lineup, verdicts, and what was addressed vs. ignored.
   hardcoded. Keep family diversity — don't pick three variants of one family.
 - Rebuild + resync the CLI after changing the engine:
   `cd ~/Developer/cc-multi-ai-review && pnpm build && pnpm sync`.
+- Data egress: running a review sends the full branch diff (up to the
+  configured limits) to third-party model providers via the `pi` CLI — the
+  models you select, e.g. OpenAI, MiniMax, or Kimi providers. Don't run this
+  skill on repos whose diffs must not leave the machine.

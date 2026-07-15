@@ -34,6 +34,15 @@ describe("resolveBaseRef", () => {
     });
   });
 
+  it("rejects refs starting with a dash before running git commands", async () => {
+    const shell = fakeShell({});
+
+    await expect(resolveBaseRef(shell, "--all")).resolves.toEqual({
+      ok: false,
+      message: "Invalid base ref: --all",
+    });
+  });
+
   it("falls back to the first resolvable default base ref", async () => {
     const shell = fakeShell({
       "git rev-parse --verify origin/main^{commit}": new Error("missing"),
