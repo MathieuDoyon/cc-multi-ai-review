@@ -1,0 +1,13 @@
+{
+  "name": "multi-ai-review",
+  "description": "Adversarial multi-AI peer review of a code change via the pi CLI across diverse model families, synthesized into one deterministic Markdown report.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Mathieu Doyon",
+    "url": "https://github.com/MathieuDoyon"
+  },
+  "homepage": "https://github.com/MathieuDoyon/cc-multi-ai-review",
+  "repository": "https://github.com/MathieuDoyon/cc-multi-ai-review",
+  "license": "MIT",
+  "keywords": ["code-review", "multi-agent", "pi", "skill"]
+}

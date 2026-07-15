@@ -16,10 +16,11 @@ models, runs the selected ones in parallel forcing a JSON schema, and returns a
 deterministic Markdown report. Claude then **ground-truths** the actionable
 findings before presenting them.
 
-Set the CLI path once:
+Set the CLI path once — `DIR` is **this skill's own directory** (the directory
+containing this SKILL.md, wherever the skill was installed):
 
 ```bash
-DIR="$HOME/.claude/skills/multi-ai-review"
+DIR="<absolute path to this skill's directory>"
 ```
 
 ## Procedure
@@ -102,8 +103,9 @@ the lineup, verdicts, and what was addressed vs. ignored.
   degrades to a "Reviewer Failures" row rather than breaking the run.
 - Model discovery is at runtime (`pi --list-models`); versions are never
   hardcoded. Keep family diversity — don't pick three variants of one family.
-- Rebuild + resync the CLI after changing the engine:
-  `cd ~/Developer/cc-multi-ai-review && pnpm build && pnpm sync`.
+- The engine source lives at
+  https://github.com/MathieuDoyon/cc-multi-ai-review; `scripts/cli.mjs` is the
+  committed build output (`pnpm build`).
 - Data egress: running a review sends the full branch diff (up to the
   configured limits) to third-party model providers via the `pi` CLI — the
   models you select, e.g. OpenAI, MiniMax, or Kimi providers. Don't run this

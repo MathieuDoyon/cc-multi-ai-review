@@ -1,0 +1,18 @@
+{
+  "name": "cc-multi-ai-review",
+  "owner": {
+    "name": "Mathieu Doyon",
+    "url": "https://github.com/MathieuDoyon"
+  },
+  "metadata": {
+    "description": "Marketplace for the multi-ai-review Claude Code plugin.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "multi-ai-review",
+      "source": "./",
+      "description": "Adversarial multi-AI peer review of a code change via the pi CLI across diverse model families, synthesized into one deterministic Markdown report."
+    }
+  ]
+}
