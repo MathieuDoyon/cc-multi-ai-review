@@ -1,0 +1,52 @@
+{
+  "name": "opencode-multi-ai-review",
+  "version": "0.1.4",
+  "description": "Multi-model code review plugin for opencode.",
+  "type": "module",
+  "packageManager": "pnpm@11.7.0",
+  "private": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./command": "./commands/multi-review.md"
+  },
+  "files": [
+    "dist",
+    "commands",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "code-review",
+    "multi-agent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MathieuDoyon/opencode-multi-ai-review.git"
+  },
+  "homepage": "https://github.com/MathieuDoyon/opencode-multi-ai-review#readme",
+  "bugs": {
+    "url": "https://github.com/MathieuDoyon/opencode-multi-ai-review/issues"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.17.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}
