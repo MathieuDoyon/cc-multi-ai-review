@@ -86,26 +86,12 @@ export type ReportInput = {
   truncationReason?: string;
 };
 
-export type ReviewClient = {
-  session: {
-    create(input: { body: { parentID: string; title: string } }): Promise<{ id: string }>;
-    prompt(input: {
-      path: { id: string };
-      body: {
-        model: { providerID: string; modelID: string };
-        system: string;
-        tools: Record<string, boolean>;
-        parts: Array<{ type: "text"; text: string }>;
-      };
-    }): Promise<{ parts: Array<{ type: string; text?: string }> }>;
-  };
-};
-
 export type RunReviewInput = {
-  client: ReviewClient;
+  runPi: PiRunner;
   shell: ShellRunner;
-  sessionID: string;
   models: string[];
+  thinking?: ThinkingLevel;
+  thinkingSupport?: Record<string, boolean>;
   baseRef?: string;
   instructions?: string;
   limits: DiffLimits;
